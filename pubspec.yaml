@@ -1,0 +1,30 @@
+name: openpanel_dart
+description: Dart/Flutter client for OpenPanel analytics
+version: 0.1.0
+homepage: https://github.com/oh64/openpanel_dart
+topics:
+  - analytics
+  - openpanel
+
+environment:
+  sdk: '>=3.3.1 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  device_info_plus: ^13.3.0
+  dio: ^5.9.0
+  meta: ^1.16.0
+  package_info_plus: ^10.2.2
+  referrer: ^1.1.0
+  shared_preferences: ^2.5.4
+  uuid: ^4.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:

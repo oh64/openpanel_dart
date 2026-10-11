@@ -1,0 +1,6 @@
+# Dart tooling
+.dart_tool/
+build/
+
+# Pub
+.pub/
