@@ -3,7 +3,7 @@ description: >-
   Flutter integration for openpanel_dart: screen tracking, referrer and
   lifecycle observers, plus shared_preferences and device_info backed
   storage/metadata.
-version: 0.1.3
+version: 0.1.4
 homepage: https://github.com/oh64/openpanel_dart
 topics:
   - analytics
@@ -31,3 +31,11 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+
+platforms:
+  android:
+  ios:
+  web:
+  windows:
+  linux:
+  macos:

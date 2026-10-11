@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- It should now compile on web and desktop
+
 ## 0.1.3
 
 - Follow openpanel_dart versioning
