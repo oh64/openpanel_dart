@@ -11,7 +11,7 @@ const String kDeviceIdPath = '/track/device-id';
 const String kSdkName = 'openpanel-dart';
 
 /// Version sent in the `openpanel-sdk-version` header.
-const String kSdkVersion = '0.1.0';
+const String kSdkVersion = '0.1.2';
 
 /// Header carrying the client id.
 const String kClientIdHeader = 'openpanel-client-id';
