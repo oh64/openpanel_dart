@@ -12,11 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
         with:
-          sdk: stable
+          channel: stable
 
-      - name: Install dependencies
+      - name: Install workspace dependencies
         run: dart pub get
 
       - name: Analyze
@@ -24,10 +24,6 @@ jobs:
 
       - name: Test
         run: dart test
-
-      - name: Install example dependencies
-        working-directory: example
-        run: dart pub get
 
       - name: Analyze example
         working-directory: example
@@ -47,8 +43,7 @@ jobs:
         with:
           channel: stable
 
-      - name: Install dependencies
-        working-directory: openpanel_dart_flutter
+      - name: Install workspace dependencies
         run: flutter pub get
 
       - name: Analyze
@@ -58,10 +53,6 @@ jobs:
       - name: Test
         working-directory: openpanel_dart_flutter
         run: flutter test
-
-      - name: Install example dependencies
-        working-directory: openpanel_dart_flutter/example
-        run: flutter pub get
 
       - name: Analyze example
         working-directory: openpanel_dart_flutter/example

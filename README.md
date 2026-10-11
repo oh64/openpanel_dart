@@ -106,21 +106,31 @@ await analytics.clearQueue(); // only pending events
 
 ## Development
 
+This repository is a single [pub workspace](https://dart.dev/tools/pub/workspaces),
+so all packages share one resolution:
+
 - `openpanel_dart` (this package) the pure Dart core.
 - `example/` the pure Dart example for the core.
 - `openpanel_dart_flutter` the Flutter integration.
 - `openpanel_dart_flutter/example/` the Flutter example.
 
+Resolve once from the repository root, then run the checks from each package.
+The Flutter SDK is required to resolve the workspace because it contains the
+Flutter package.
+
 ```sh
+# Resolve the whole workspace (needs the Flutter SDK)
+dart pub get
+
 # Core (pure Dart)
-dart pub get && dart analyze && dart test
+dart analyze && dart test
 
 # Core example (pure Dart)
-cd example && dart pub get && dart analyze && dart test
+cd example && dart analyze && dart test
 
 # Flutter integration and its example
-cd openpanel_dart_flutter && flutter pub get && flutter analyze && flutter test
-cd example && flutter pub get && flutter analyze && flutter test
+cd openpanel_dart_flutter && flutter analyze && flutter test
+cd example && flutter analyze && flutter test
 ```
 
 Third-party dependencies are distributed under their own licenses (listed in `LICENSE`).

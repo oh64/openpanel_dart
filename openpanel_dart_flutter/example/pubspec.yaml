@@ -5,22 +5,19 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.5
+  sdk: ^3.6.0
+
+resolution: workspace
 
 dependencies:
   flutter:
     sdk: flutter
-  openpanel_dart_flutter:
-    path: ../
+  openpanel_dart_flutter: ^0.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-
-dependency_overrides:
-  openpanel_dart:
-    path: ../../
 
 flutter:
   uses-material-design: true
