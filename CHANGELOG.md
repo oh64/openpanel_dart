@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Just a description change to follow Dart file conventions
+
 ## 0.1.2
 
 - Split the SDK into a **pure Dart** core (`openpanel_dart`) and a Flutter

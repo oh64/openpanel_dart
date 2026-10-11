@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Follow openpanel_dart versioning
+
 ## 0.1.2
 
 - Initial release of the Flutter integration package, extracted from the former monolithic `openpanel_dart`:
