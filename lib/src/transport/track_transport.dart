@@ -72,18 +72,26 @@ class DioTrackTransport implements TrackTransport {
         kTrackPath,
         data: request.toBody(),
       );
-      _log('POST $kTrackPath -> ${response.statusCode}');
+      _log(
+        'POST $kTrackPath -> ${response.statusCode} '
+        '${decodeErrorBody(response.data)}',
+      );
       return classifyStatus(
         statusCode: response.statusCode ?? 0,
         headers: response.headers.map,
+        message: extractServerMessage(response.data),
       );
     } on DioException catch (error) {
       final response = error.response;
       if (response != null) {
-        _log('POST $kTrackPath -> ${response.statusCode}');
+        _log(
+          'POST $kTrackPath -> ${response.statusCode} '
+          '${decodeErrorBody(response.data)}',
+        );
         return classifyStatus(
           statusCode: response.statusCode ?? 0,
           headers: response.headers.map,
+          message: extractServerMessage(response.data),
         );
       }
       // Network / timeout error.
@@ -195,4 +203,18 @@ String decodeErrorBody(Object? body) {
   if (body is String) return body;
   if (body is Map) return jsonEncode(body);
   return '$body';
+}
+
+/// Extracts a human readable message from an error response body.
+@visibleForTesting
+String extractServerMessage(Object? body) {
+  if (body is Map) {
+    for (final key in const <String>['message', 'error', 'detail']) {
+      final value = body[key];
+      if (value is String && value.isNotEmpty) {
+        return value;
+      }
+    }
+  }
+  return '';
 }

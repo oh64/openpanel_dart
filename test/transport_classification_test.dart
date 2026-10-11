@@ -46,6 +46,44 @@ void main() {
         expect(classifyStatus(statusCode: code).shouldPause, isFalse);
       }
     });
+
+    test('surfaces the server message when provided', () {
+      final result = classifyStatus(
+        statusCode: 400,
+        message: 'Invalid type',
+      ) as TransportInvalid;
+      expect(result.message, 'Invalid type');
+    });
+  });
+
+  group('extractServerMessage', () {
+    test('reads the message field from a JSON body', () {
+      expect(
+        extractServerMessage(<String, dynamic>{
+          'status': 400,
+          'error': 'Bad Request',
+          'message': 'Invalid type',
+        }),
+        'Invalid type',
+      );
+    });
+
+    test('falls back to error and detail', () {
+      expect(
+        extractServerMessage(<String, dynamic>{'error': 'Unauthorized'}),
+        'Unauthorized',
+      );
+      expect(
+        extractServerMessage(<String, dynamic>{'detail': 'nope'}),
+        'nope',
+      );
+    });
+
+    test('returns an empty string for anything else', () {
+      expect(extractServerMessage('plain text'), isEmpty);
+      expect(extractServerMessage(null), isEmpty);
+      expect(extractServerMessage(<String, dynamic>{'nope': 1}), isEmpty);
+    });
   });
 
   group('parseRetryAfter', () {
