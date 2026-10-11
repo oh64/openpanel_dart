@@ -1,7 +1,9 @@
 analyzer:
   exclude:
     - build/**
-include: package:flutter_lints/flutter.yaml
+    - example/**
+    - openpanel_dart_flutter/**
+include: package:lints/recommended.yaml
 
 linter:
   rules:

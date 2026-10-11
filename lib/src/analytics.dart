@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'config.dart';
@@ -14,28 +12,41 @@ import 'models/track_request.dart';
 import 'models/transport_result.dart';
 import 'platform/device_context.dart';
 import 'queue/event_queue.dart';
+import 'storage/default_key_value_store.dart';
+import 'storage/key_value_store.dart';
 import 'transport/track_transport.dart';
 
 /// Flutter analytics client for [OpenPanel](https://openpanel.dev).
 ///
 /// The client is fire-and-forget by design: every public asynchronous method
 /// only schedules work. Events are persisted *before* any attempt to send
-/// them, so nothing is lost when the application is killed while a flush is in
-/// flight. Use `OpenpanelAnalytics.instance` for a process wide singleton or
-/// construct your own instance.
+/// them, so a flush interrupted by the OS is replayed on the next launch.
+///
+/// Persistence is only as durable as the [EventQueue] backend: the default
+/// `shared_preferences` queue serializes the whole queue as one JSON
+/// string and does not guarantee an `fsync` on every write, so an abrupt
+/// process kill can lose the events queued since the last successful
+/// write. See [OpenpanelConfig.maxQueueBytes] for the storage budget. Use
+/// `OpenpanelAnalytics.instance` for a process wide singleton or construct
+/// your own instance.
 ///
 /// Self-hosting is supported by pointing [OpenpanelConfig.apiUrl] at your own
 /// domain and, if necessary, adding extra headers such as `Origin`.
+///
+/// Persistent storage defaults to a file on `dart:io` platforms and
+/// to `localStorage` on the web; inject a custom [KeyValueStore] to change that.
 class OpenpanelAnalytics {
   OpenpanelAnalytics({
     @visibleForTesting TrackTransport? transport,
     @visibleForTesting EventQueue? queue,
     @visibleForTesting IdentityStore? identityStore,
     @visibleForTesting DeviceContext? deviceContext,
+    @visibleForTesting KeyValueStore? keyValueStore,
   })  : _transportOverride = transport,
         _queueOverride = queue,
         _identityOverride = identityStore,
-        _deviceContextOverride = deviceContext;
+        _deviceContextOverride = deviceContext,
+        _keyValueStoreOverride = keyValueStore;
 
   /// Shared instance.
   static final OpenpanelAnalytics instance = OpenpanelAnalytics();
@@ -44,6 +55,7 @@ class OpenpanelAnalytics {
   final EventQueue? _queueOverride;
   final IdentityStore? _identityOverride;
   final DeviceContext? _deviceContextOverride;
+  final KeyValueStore? _keyValueStoreOverride;
 
   OpenpanelConfig? _config;
   TrackTransport? _transport;
@@ -83,21 +95,33 @@ class OpenpanelAnalytics {
 
   /// Initialises the client.
   ///
-  /// Events are never sent before the client is initialised.
-  Future<void> init({required OpenpanelConfig config}) async {
+  /// Events are never sent before the client is initialised. The optional
+  /// [keyValueStore], [queue] and [deviceContext] override the constructor
+  /// injected dependencies and the platform defaults for this instance.
+  Future<void> init({
+    required OpenpanelConfig config,
+    KeyValueStore? keyValueStore,
+    EventQueue? queue,
+    DeviceContext? deviceContext,
+  }) async {
     if (_initialized) return;
+    config.validate();
     _config = config;
-    _deviceContext = _deviceContextOverride ?? DefaultDeviceContext();
+    _deviceContext =
+        deviceContext ?? _deviceContextOverride ?? DefaultDeviceContext();
 
-    final prefs = await SharedPreferences.getInstance();
-    _identity = _identityOverride ?? IdentityStore(prefs);
+    final store =
+        keyValueStore ?? _keyValueStoreOverride ?? createDefaultKeyValueStore();
+    _identity = _identityOverride ?? IdentityStore(store);
     await _identity!.load();
 
-    _queue = _queueOverride ??
-        SharedPreferencesEventQueue(
-          prefs: prefs,
+    _queue = queue ??
+        _queueOverride ??
+        KeyValueEventQueue(
+          store: store,
           maxQueueSize: config.maxQueueSize,
           maxEventBytes: config.maxEventBytes,
+          maxQueueBytes: config.maxQueueBytes,
           onError: config.onError,
         );
     await _queue!.load();
@@ -433,7 +457,11 @@ class OpenpanelAnalytics {
   }
 
   void _report(OpenpanelError error) {
-    _config?.onError?.call(error);
+    try {
+      _config?.onError?.call(error);
+    } catch (_) {
+      // nuh uh
+    }
     if (_config?.verbose ?? false) {
       // ignore: avoid_print
       print('[openpanel_dart] $error');

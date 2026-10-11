@@ -1,0 +1,26 @@
+name: openpanel_dart_flutter_example
+description: Example app for openpanel_dart_flutter.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  openpanel_dart_flutter:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+dependency_overrides:
+  openpanel_dart:
+    path: ../../
+
+flutter:
+  uses-material-design: true

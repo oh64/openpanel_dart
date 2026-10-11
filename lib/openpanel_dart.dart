@@ -1,3 +1,5 @@
+/// Pure Dart analytics client for [OpenPanel](https://openpanel.dev).
+///
 /// ```dart
 /// import 'package:openpanel_dart/openpanel_dart.dart';
 ///
@@ -12,6 +14,9 @@
 ///
 /// analytics.track('app_open');
 /// ```
+///
+/// Flutter applications that want automatic screen tracking or the device
+/// metadata plugins add `openpanel_dart_flutter`.
 library;
 
 export 'src/analytics.dart';
@@ -21,10 +26,8 @@ export 'src/errors.dart';
 export 'src/identity/identity_store.dart';
 export 'src/models/track_request.dart';
 export 'src/models/transport_result.dart';
-export 'src/observers/lifecycle_observer.dart';
-export 'src/observers/referrer_observer.dart';
-export 'src/observers/route_observer.dart';
-export 'src/observers/typedefs.dart';
 export 'src/platform/device_context.dart';
 export 'src/queue/event_queue.dart';
+export 'src/storage/default_key_value_store.dart';
+export 'src/storage/key_value_store.dart';
 export 'src/transport/track_transport.dart';

@@ -13,6 +13,7 @@ class OpenpanelConfig {
     this.flushInterval = const Duration(seconds: 15),
     this.maxQueueSize = 500,
     this.maxEventBytes = 64 * 1024,
+    this.maxQueueBytes = 4 * 1024 * 1024,
     this.maxAttempts = 8,
     this.retryBaseDelay = const Duration(seconds: 2),
     this.retryMaxDelay = const Duration(minutes: 5),
@@ -20,7 +21,10 @@ class OpenpanelConfig {
     this.resolveDeviceId = true,
     this.autoFlush = true,
     this.onError,
-  }) : assert(maxQueueSize > 0, 'maxQueueSize must be positive');
+  })  : assert(maxQueueSize > 0, 'maxQueueSize must be positive'),
+        assert(maxEventBytes > 0, 'maxEventBytes must be positive'),
+        assert(maxQueueBytes > 0, 'maxQueueBytes must be positive'),
+        assert(maxAttempts > 0, 'maxAttempts must be positive');
 
   /// Base URL of the OpenPanel API.
   ///
@@ -61,6 +65,13 @@ class OpenpanelConfig {
   /// dropped and reported as [OpenpanelErrorKind.invalidEvent].
   final int maxEventBytes;
 
+  /// Maximum serialized size of the whole pending queue, in bytes.
+  ///
+  /// When adding an event would exceed this budget the oldest events are
+  /// dropped until both [maxQueueSize] and [maxQueueBytes] are satisfied.
+  /// Defaults to 4 MiB, which keeps a worst case queue well below the storage limits of a web browser.
+  final int maxQueueBytes;
+
   /// Maximum number of delivery attempts for a single event before it is
   /// dropped.
   final int maxAttempts;
@@ -87,4 +98,87 @@ class OpenpanelConfig {
 
   /// Receives non fatal errors produced by the SDK.
   final OpenpanelErrorHandler? onError;
+
+  /// Validates the configuration and throws an [ArgumentError] describing the first problem found.
+  void validate() {
+    if (clientId.trim().isEmpty) {
+      throw ArgumentError.value(clientId, 'clientId', 'must not be empty');
+    }
+
+    final url = apiUrl.trim();
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      throw ArgumentError.value(
+        apiUrl,
+        'apiUrl',
+        'must be an absolute URL such as https://analytics.example.com',
+      );
+    }
+    if (uri.scheme != 'http' && uri.scheme != 'https') {
+      throw ArgumentError.value(
+        apiUrl,
+        'apiUrl',
+        'scheme must be http or https',
+      );
+    }
+    if (uri.scheme == 'http' && !_isLoopbackHost(uri.host)) {
+      throw ArgumentError.value(
+        apiUrl,
+        'apiUrl',
+        'plain http is only allowed for loopback hosts, use https',
+      );
+    }
+
+    if (maxQueueSize <= 0) {
+      throw ArgumentError.value(
+        maxQueueSize,
+        'maxQueueSize',
+        'must be positive',
+      );
+    }
+    if (maxEventBytes <= 0) {
+      throw ArgumentError.value(
+        maxEventBytes,
+        'maxEventBytes',
+        'must be positive',
+      );
+    }
+    if (maxQueueBytes <= 0) {
+      throw ArgumentError.value(
+        maxQueueBytes,
+        'maxQueueBytes',
+        'must be positive',
+      );
+    }
+    if (maxQueueBytes < maxEventBytes) {
+      throw ArgumentError(
+        'maxQueueBytes ($maxQueueBytes) must be >= maxEventBytes '
+        '($maxEventBytes), otherwise no event could ever fit in the queue.',
+      );
+    }
+    if (maxAttempts <= 0) {
+      throw ArgumentError.value(maxAttempts, 'maxAttempts', 'must be positive');
+    }
+    if (retryBaseDelay.isNegative) {
+      throw ArgumentError.value(
+        retryBaseDelay,
+        'retryBaseDelay',
+        'must not be negative',
+      );
+    }
+    if (retryMaxDelay.isNegative) {
+      throw ArgumentError.value(
+        retryMaxDelay,
+        'retryMaxDelay',
+        'must not be negative',
+      );
+    }
+  }
+}
+
+bool _isLoopbackHost(String host) {
+  return host == 'localhost' ||
+      host == '127.0.0.1' ||
+      host == '::1' ||
+      host.startsWith('127.');
 }

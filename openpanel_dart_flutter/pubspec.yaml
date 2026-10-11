@@ -1,0 +1,35 @@
+name: openpanel_dart_flutter
+description: >-
+  Flutter integration for openpanel_dart: screen tracking, referrer and
+  lifecycle observers, plus shared_preferences and device_info backed
+  storage/metadata.
+version: 0.1.2
+homepage: https://github.com/oh64/openpanel_dart
+topics:
+  - analytics
+  - openpanel
+  - flutter
+
+environment:
+  sdk: '>=3.3.1 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  openpanel_dart: ^0.1.2
+  device_info_plus: ^13.3.0
+  package_info_plus: ^10.2.2
+  referrer: ^1.1.0
+  shared_preferences: ^2.5.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+dependency_overrides:
+  openpanel_dart:
+    path: ../
+
+flutter:

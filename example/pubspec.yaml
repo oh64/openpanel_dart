@@ -1,25 +1,16 @@
 name: openpanel_dart_example
-description: Example app for openpanel_dart.
+description: Pure Dart example for openpanel_dart.
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0
 
 environment:
-  sdk: ^3.13.5
+  sdk: '>=3.3.1 <4.0.0'
 
 dependencies:
-  flutter:
-    sdk: flutter
-
-  cupertino_icons: ^1.0.8
   openpanel_dart:
     path: ../
-  shared_preferences: ^2.5.4
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^6.0.0
-
-flutter:
-  uses-material-design: true
+  lints: ^5.0.0
+  test: ^1.25.0

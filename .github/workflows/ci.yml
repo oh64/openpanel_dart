@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  openpanel_dart:
+    name: openpanel_dart (pure Dart)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Analyze
+        run: dart analyze
+
+      - name: Test
+        run: dart test
+
+      - name: Install example dependencies
+        working-directory: example
+        run: dart pub get
+
+      - name: Analyze example
+        working-directory: example
+        run: dart analyze
+
+      - name: Test example
+        working-directory: example
+        run: dart test
+
+  openpanel_dart_flutter:
+    name: openpanel_dart_flutter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        working-directory: openpanel_dart_flutter
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: openpanel_dart_flutter
+        run: flutter analyze
+
+      - name: Test
+        working-directory: openpanel_dart_flutter
+        run: flutter test
+
+      - name: Install example dependencies
+        working-directory: openpanel_dart_flutter/example
+        run: flutter pub get
+
+      - name: Analyze example
+        working-directory: openpanel_dart_flutter/example
+        run: flutter analyze
+
+      - name: Test example
+        working-directory: openpanel_dart_flutter/example
+        run: flutter test

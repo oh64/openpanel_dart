@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:openpanel_dart/src/models/transport_result.dart';
 import 'package:openpanel_dart/src/transport/track_transport.dart';
 
@@ -23,7 +23,9 @@ void main() {
     test('429 is retryable and honours Retry-After', () {
       final result = classifyStatus(
         statusCode: 429,
-        headers: <String, List<String>>{'retry-after': <String>['30']},
+        headers: <String, List<String>>{
+          'retry-after': <String>['30']
+        },
       );
       expect(result, isA<TransportRetryable>());
       expect(
@@ -89,17 +91,21 @@ void main() {
   group('parseRetryAfter', () {
     test('parses a seconds value', () {
       expect(
-        parseRetryAfter(<String, List<String>>{'retry-after': <String>['5']}),
+        parseRetryAfter(<String, List<String>>{
+          'retry-after': <String>['5']
+        }),
         const Duration(seconds: 5),
       );
     });
 
-    test('parses an HTTP date', () {
-      final futureDate =
-          DateTime.now().toUtc().add(const Duration(seconds: 60));
-      final formatted = futureDate.toIso8601String();
+    test('parses an HTTP-date (IMF-fixdate)', () {
+      final formatted = _httpDate(
+        DateTime.now().toUtc().add(const Duration(seconds: 60)),
+      );
       final duration = parseRetryAfter(
-        <String, List<String>>{'retry-after': <String>[formatted]},
+        <String, List<String>>{
+          'retry-after': <String>[formatted]
+        },
       );
       expect(duration, isNotNull);
       expect(duration!.inSeconds, greaterThanOrEqualTo(55));
@@ -108,9 +114,59 @@ void main() {
     test('returns null when absent or malformed', () {
       expect(parseRetryAfter(null), isNull);
       expect(
-        parseRetryAfter(<String, List<String>>{'retry-after': <String>['NaN']}),
+        parseRetryAfter(<String, List<String>>{
+          'retry-after': <String>['NaN']
+        }),
         isNull,
       );
     });
   });
+
+  group('parseHttpDate', () {
+    test('parses the three RFC 7231 formats', () {
+      final expected = DateTime.utc(1994, 11, 6, 8, 49, 37);
+      expect(parseHttpDate('Sun, 06 Nov 1994 08:49:37 GMT'), expected);
+      expect(parseHttpDate('Sunday, 06-Nov-94 08:49:37 GMT'), expected);
+      expect(parseHttpDate('Sun Nov  6 08:49:37 1994'), expected);
+    });
+
+    test('returns null for anything else', () {
+      expect(parseHttpDate('not a date'), isNull);
+      expect(parseHttpDate(''), isNull);
+    });
+  });
+}
+
+const List<String> _weekdays = <String>[
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+];
+
+const List<String> _months = <String>[
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/// `Sun, 06 Nov 1994 08:49:37 GMT`.
+String _httpDate(DateTime time) {
+  final utc = time.toUtc();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${_weekdays[utc.weekday - 1]}, ${two(utc.day)} '
+      '${_months[utc.month - 1]} ${utc.year} '
+      '${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)} GMT';
 }

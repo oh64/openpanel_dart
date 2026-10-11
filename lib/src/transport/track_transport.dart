@@ -189,12 +189,120 @@ Duration? parseRetryAfter(Map<String, List<String>>? headers) {
   if (seconds != null && seconds >= 0) {
     return Duration(seconds: seconds);
   }
-  final date = DateTime.tryParse(raw);
-  if (date != null) {
-    final delta = date.difference(DateTime.now());
+  // RFC 7231 `HTTP-date`
+  final httpDate = parseHttpDate(raw);
+  if (httpDate != null) {
+    final delta = httpDate.difference(DateTime.now().toUtc());
+    return delta.isNegative ? Duration.zero : delta;
+  }
+  final iso = DateTime.tryParse(raw);
+  if (iso != null) {
+    final delta = iso.difference(DateTime.now());
     return delta.isNegative ? Duration.zero : delta;
   }
   return null;
+}
+
+/// Parses an RFC 7231 `HTTP-date` :
+///
+/// * IMF-fixdate: `Sun, 06 Nov 1994 08:49:37 GMT`
+/// * RFC 850: `Sunday, 06-Nov-94 08:49:37 GMT`
+/// * ANSI C asctime: `Sun Nov  6 08:49:37 1994`
+///
+/// Returns `null` when [value] is not a valid HTTP-date.
+@visibleForTesting
+DateTime? parseHttpDate(String value) {
+  final raw = value.trim();
+
+  final imfFixdate = RegExp(
+    r'^[A-Za-z]{3}, (\d{2}) ([A-Za-z]{3}) (\d{4}) '
+    r'(\d{2}):(\d{2}):(\d{2}) GMT$',
+  ).firstMatch(raw);
+  if (imfFixdate != null) {
+    return _buildUtc(
+      year: imfFixdate[3],
+      month: imfFixdate[2],
+      day: imfFixdate[1],
+      hour: imfFixdate[4],
+      minute: imfFixdate[5],
+      second: imfFixdate[6],
+    );
+  }
+
+  final rfc850 = RegExp(
+    r'^[A-Za-z]+, (\d{2})-([A-Za-z]{3})-(\d{2}) '
+    r'(\d{2}):(\d{2}):(\d{2}) GMT$',
+  ).firstMatch(raw);
+  if (rfc850 != null) {
+    final shortYear = int.tryParse(rfc850[3] ?? '');
+    if (shortYear == null) return null;
+    final year = shortYear >= 70 ? 1900 + shortYear : 2000 + shortYear;
+    return _buildUtc(
+      year: '$year',
+      month: rfc850[2],
+      day: rfc850[1],
+      hour: rfc850[4],
+      minute: rfc850[5],
+      second: rfc850[6],
+    );
+  }
+
+  final asctime = RegExp(
+    r'^[A-Za-z]{3} ([A-Za-z]{3})\s+(\d{1,2}) '
+    r'(\d{2}):(\d{2}):(\d{2}) (\d{4})$',
+  ).firstMatch(raw);
+  if (asctime != null) {
+    return _buildUtc(
+      year: asctime[6],
+      month: asctime[1],
+      day: asctime[2],
+      hour: asctime[3],
+      minute: asctime[4],
+      second: asctime[5],
+    );
+  }
+
+  return null;
+}
+
+const Map<String, int> _monthNumbers = <String, int>{
+  'jan': 1,
+  'feb': 2,
+  'mar': 3,
+  'apr': 4,
+  'may': 5,
+  'jun': 6,
+  'jul': 7,
+  'aug': 8,
+  'sep': 9,
+  'oct': 10,
+  'nov': 11,
+  'dec': 12,
+};
+
+DateTime? _buildUtc({
+  required String? year,
+  required String? month,
+  required String? day,
+  required String? hour,
+  required String? minute,
+  required String? second,
+}) {
+  final y = int.tryParse(year ?? '');
+  final d = int.tryParse(day ?? '');
+  final h = int.tryParse(hour ?? '');
+  final mi = int.tryParse(minute ?? '');
+  final s = int.tryParse(second ?? '');
+  final m = _monthNumbers[(month ?? '').toLowerCase()];
+  if (y == null ||
+      d == null ||
+      h == null ||
+      mi == null ||
+      s == null ||
+      m == null) {
+    return null;
+  }
+  return DateTime.utc(y, m, d, h, mi, s);
 }
 
 /// Decodes the API error body for logging purposes.

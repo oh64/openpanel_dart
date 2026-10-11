@@ -1,8 +1,10 @@
 name: openpanel_dart
 description: >-
-  Dart/Flutter analytics client for OpenPanel.
-  track events, identify users, manage groups via the HTTP API on iOS, Android, web and desktop.
-version: 0.1.1
+  Pure Dart analytics client for OpenPanel.
+  Track events, identify users and manage groups via the HTTP API. Works on
+  Flutter as well as plain Dart (CLI, server, web). Flutter specific helpers
+  live in openpanel_dart_flutter.
+version: 0.1.2
 homepage: https://github.com/oh64/openpanel_dart
 topics:
   - analytics
@@ -10,23 +12,13 @@ topics:
 
 environment:
   sdk: '>=3.3.1 <4.0.0'
-  flutter: ">=1.17.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
-
-  device_info_plus: ^13.3.0
   dio: ^5.9.0
   meta: ^1.16.0
-  package_info_plus: ^10.2.2
-  referrer: ^1.1.0
-  shared_preferences: ^2.5.4
   uuid: ^4.5.2
+  web: ^1.1.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^6.0.0
-
-flutter:
+  lints: ^5.0.0
+  test: ^1.25.0

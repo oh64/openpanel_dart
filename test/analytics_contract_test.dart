@@ -1,6 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:openpanel_dart/openpanel_dart.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingTransport implements TrackTransport {
   final List<Map<String, dynamic>> sent = <Map<String, dynamic>>[];
@@ -45,8 +44,6 @@ Future<void> waitFor(bool Function() condition) async {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
   late RecordingTransport transport;
   late OpenpanelAnalytics analytics;
   late List<OpenpanelError> errors;
@@ -64,10 +61,12 @@ void main() {
       );
 
   setUp(() {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
     transport = RecordingTransport();
     errors = <OpenpanelError>[];
-    analytics = OpenpanelAnalytics(transport: transport);
+    analytics = OpenpanelAnalytics(
+      transport: transport,
+      keyValueStore: InMemoryKeyValueStore(),
+    );
   });
 
   tearDown(() {
@@ -271,7 +270,10 @@ void main() {
     test('resolves device identity on init when enabled', () async {
       transport.deviceIdentity =
           const DeviceIdentity(deviceId: 'device-1', sessionId: 'session-1');
-      final client = OpenpanelAnalytics(transport: transport);
+      final client = OpenpanelAnalytics(
+        transport: transport,
+        keyValueStore: InMemoryKeyValueStore(),
+      );
       await client.init(
         config: OpenpanelConfig(
           clientId: 'client-1',

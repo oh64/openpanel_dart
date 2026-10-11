@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../constants.dart';
+import '../storage/key_value_store.dart';
 
 /// Persists identity state across launches:
 ///
@@ -13,11 +12,11 @@ import '../constants.dart';
 ///   server and are informational only.
 /// * [collectionEnabled] mirrors the runtime kill switch.
 class IdentityStore {
-  IdentityStore(this._prefs);
+  IdentityStore(this._store);
 
   static final String _key = '${kStoragePrefix}identity';
 
-  final SharedPreferences _prefs;
+  final KeyValueStore _store;
 
   String? profileId;
   String? deviceId;
@@ -25,7 +24,7 @@ class IdentityStore {
   bool collectionEnabled = true;
 
   Future<void> load() async {
-    final raw = _prefs.getString(_key);
+    final raw = await _store.getString(_key);
     if (raw == null || raw.isEmpty) return;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
@@ -65,7 +64,7 @@ class IdentityStore {
   }
 
   Future<void> _save() {
-    return _prefs.setString(
+    return _store.setString(
       _key,
       jsonEncode(<String, dynamic>{
         'profileId': profileId,
