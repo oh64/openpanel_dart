@@ -1,8 +1,5 @@
-import 'package:meta/meta.dart';
-
 /// A single unit of work sent to `POST /track`.
 /// The API accepts a `{ "type": ..., "payload": ... }` envelope.
-@immutable
 class TrackRequest {
   const TrackRequest({
     required this.id,

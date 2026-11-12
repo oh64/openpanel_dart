@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:meta/meta.dart';
-import 'package:uuid/uuid.dart';
-
 import 'config.dart';
 import 'constants.dart';
 import 'errors.dart';
@@ -15,6 +12,7 @@ import 'queue/event_queue.dart';
 import 'storage/default_key_value_store.dart';
 import 'storage/key_value_store.dart';
 import 'transport/track_transport.dart';
+import 'uuid.dart';
 
 /// Flutter analytics client for [OpenPanel](https://openpanel.dev).
 ///
@@ -37,11 +35,11 @@ import 'transport/track_transport.dart';
 /// to `localStorage` on the web; inject a custom [KeyValueStore] to change that.
 class OpenpanelAnalytics {
   OpenpanelAnalytics({
-    @visibleForTesting TrackTransport? transport,
-    @visibleForTesting EventQueue? queue,
-    @visibleForTesting IdentityStore? identityStore,
-    @visibleForTesting DeviceContext? deviceContext,
-    @visibleForTesting KeyValueStore? keyValueStore,
+    TrackTransport? transport,
+    EventQueue? queue,
+    IdentityStore? identityStore,
+    DeviceContext? deviceContext,
+    KeyValueStore? keyValueStore,
   })  : _transportOverride = transport,
         _queueOverride = queue,
         _identityOverride = identityStore,
@@ -130,7 +128,7 @@ class OpenpanelAnalytics {
       _transport = _transportOverride;
     } else {
       final userAgent = await _deviceContext!.buildUserAgent();
-      _transport = DioTrackTransport(config: config, userAgent: userAgent);
+      _transport = HttpTrackTransport(config: config, userAgent: userAgent);
     }
 
     if (config.collectDeviceInfo) {
@@ -416,7 +414,7 @@ class OpenpanelAnalytics {
     if (_config!.disabled) return;
     if (!(_identity?.collectionEnabled ?? false)) return;
     final request = TrackRequest(
-      id: const Uuid().v4(),
+      id: generateUuidV4(),
       type: type,
       payload: payload,
       createdAt: DateTime.now(),

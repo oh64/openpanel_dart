@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 /// Callback invoked whenever the SDK reports an error.
 typedef OpenpanelErrorHandler = void Function(OpenpanelError error);
 
@@ -21,7 +19,6 @@ enum OpenpanelErrorKind {
 }
 
 /// Error surfaced by the SDK.
-@immutable
 class OpenpanelError {
   const OpenpanelError({
     required this.kind,

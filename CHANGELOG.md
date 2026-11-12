@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Dependencies reduced from four to one: `dio` is replaced by `package:http`,
+  `uuid` by a local UUID v4 generator (`Random.secure()`), `package:web` by
+  direct `dart:js_interop` bindings to `localStorage`, and `package:meta`
+  annotations are dropped.
+
 ## 0.1.3
 
 - Just a description change to follow Dart file conventions

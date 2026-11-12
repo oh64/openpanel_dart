@@ -1,23 +1,31 @@
-import 'package:web/web.dart' as web;
+import 'dart:js_interop';
 
 import 'key_value_store.dart';
 
 /// Web default store backed by `window.localStorage`.
 KeyValueStore createDefaultKeyValueStore() => WebKeyValueStore();
 
-final class WebKeyValueStore implements KeyValueStore {
-  final web.Storage _storage = web.window.localStorage;
+@JS('localStorage')
+external _WebStorage get _localStorage;
 
+/// Minimal binding over [`Storage`](https://developer.mozilla.org/en-US/docs/Web/API/Storage).
+extension type _WebStorage._(JSObject _) implements JSObject {
+  external String? getItem(String key);
+  external void setItem(String key, String value);
+  external void removeItem(String key);
+}
+
+final class WebKeyValueStore implements KeyValueStore {
   @override
-  Future<String?> getString(String key) async => _storage.getItem(key);
+  Future<String?> getString(String key) async => _localStorage.getItem(key);
 
   @override
   Future<void> setString(String key, String value) async {
-    _storage.setItem(key, value);
+    _localStorage.setItem(key, value);
   }
 
   @override
   Future<void> remove(String key) async {
-    _storage.removeItem(key);
+    _localStorage.removeItem(key);
   }
 }

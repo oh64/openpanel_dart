@@ -28,10 +28,8 @@ description published at https://api.openpanel.dev/openapi.json.
 
 Third-party dependencies are distributed under their own licenses:
 
-  * dio                - MIT
-  * meta               - BSD-3-Clause
-  * package_info_plus  - BSD-3-Clause
-  * device_info_plus   - BSD-3-Clause
-  * shared_preferences - BSD-3-Clause
-  * uuid               - MIT
-  * referrer           - MIT
+  * http                - BSD-3-Clause
+  * device_info_plus    - BSD-3-Clause
+  * package_info_plus   - BSD-3-Clause
+  * shared_preferences  - BSD-3-Clause
+  * referrer            - MIT

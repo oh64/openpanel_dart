@@ -27,7 +27,6 @@ class OpenpanelRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   final ScreenNameExtractor _screenNameExtractor;
 
   /// The instance used to track screen views.
-  @visibleForTesting
   OpenpanelAnalytics? analytics;
 
   @override

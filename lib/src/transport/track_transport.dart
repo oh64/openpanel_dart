@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
-import 'package:meta/meta.dart';
+import 'package:http/http.dart' as http;
 
 import '../config.dart';
 import '../constants.dart';
@@ -9,7 +9,6 @@ import '../models/track_request.dart';
 import '../models/transport_result.dart';
 
 /// Result of a device identifier resolution.
-@immutable
 class DeviceIdentity {
   const DeviceIdentity({this.deviceId, this.sessionId});
 
@@ -34,90 +33,87 @@ abstract interface class TrackTransport {
   void close();
 }
 
-/// [TrackTransport] backed by `package:dio`.
-class DioTrackTransport implements TrackTransport {
-  DioTrackTransport({
+/// [TrackTransport] backed by `package:http`.
+class HttpTrackTransport implements TrackTransport {
+  HttpTrackTransport({
     required OpenpanelConfig config,
     required String userAgent,
-    Dio? dio,
+    http.Client? client,
   })  : _config = config,
-        _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: config.apiUrl,
-                connectTimeout: const Duration(seconds: 10),
-                receiveTimeout: const Duration(seconds: 20),
-                sendTimeout: const Duration(seconds: 10),
-                // We classify every status code ourselves.
-                validateStatus: (_) => true,
-                headers: <String, dynamic>{
-                  kClientIdHeader: config.clientId,
-                  kSdkNameHeader: kSdkName,
-                  kSdkVersionHeader: kSdkVersion,
-                  'User-Agent': userAgent,
-                  if (config.clientSecret != null)
-                    kClientSecretHeader: config.clientSecret,
-                  ...config.headers,
-                },
-              ),
-            );
+        _client = client ?? http.Client(),
+        _baseHeaders = <String, String>{
+          kClientIdHeader: config.clientId,
+          kSdkNameHeader: kSdkName,
+          kSdkVersionHeader: kSdkVersion,
+          'User-Agent': userAgent,
+          if (config.clientSecret != null)
+            kClientSecretHeader: config.clientSecret!,
+          ...config.headers,
+        };
+
+  static const Duration _requestTimeout = Duration(seconds: 20);
 
   final OpenpanelConfig _config;
-  final Dio _dio;
+  final http.Client _client;
+  final Map<String, String> _baseHeaders;
+
+  Uri _uri(String path) => Uri.parse('${_config.apiUrl}$path');
 
   @override
   Future<TransportResult> send(TrackRequest request) async {
     try {
-      final response = await _dio.post<dynamic>(
-        kTrackPath,
-        data: request.toBody(),
-      );
+      final response = await _client
+          .post(
+            _uri(kTrackPath),
+            headers: <String, String>{
+              ..._baseHeaders,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(request.toBody()),
+          )
+          .timeout(_requestTimeout);
+      final body = _decodeBody(response.body);
       _log(
         'POST $kTrackPath -> ${response.statusCode} '
-        '${decodeErrorBody(response.data)}',
+        '${decodeErrorBody(body)}',
       );
       return classifyStatus(
-        statusCode: response.statusCode ?? 0,
-        headers: response.headers.map,
-        message: extractServerMessage(response.data),
+        statusCode: response.statusCode,
+        headers: _responseHeaders(response),
+        message: extractServerMessage(body),
       );
-    } on DioException catch (error) {
-      final response = error.response;
-      if (response != null) {
-        _log(
-          'POST $kTrackPath -> ${response.statusCode} '
-          '${decodeErrorBody(response.data)}',
-        );
-        return classifyStatus(
-          statusCode: response.statusCode ?? 0,
-          headers: response.headers.map,
-          message: extractServerMessage(response.data),
-        );
-      }
-      // Network / timeout error.
-      return TransportRetryable(message: error.message ?? 'Network error');
+    } on TimeoutException catch (error) {
+      return TransportRetryable(
+        message: error.message ?? 'Network timeout',
+      );
+    } on http.ClientException catch (error) {
+      return TransportRetryable(message: error.message);
     }
   }
 
   @override
   Future<DeviceIdentity?> fetchDeviceId() async {
     try {
-      final response = await _dio.get<dynamic>(kDeviceIdPath);
-      final body = response.data;
+      final response = await _client
+          .get(_uri(kDeviceIdPath), headers: _baseHeaders)
+          .timeout(_requestTimeout);
+      final body = _decodeBody(response.body);
       if (body is! Map) return null;
       final map = Map<String, dynamic>.from(body);
       return DeviceIdentity(
-        deviceId: _firstString(map, <String>['deviceId', 'device_id', 'id']),
-        sessionId: _firstString(map, <String>['sessionId', 'session_id']),
+        deviceId: _firstString(map, const <String>['deviceId', 'device_id', 'id']),
+        sessionId: _firstString(map, const <String>['sessionId', 'session_id']),
       );
-    } on DioException {
+    } on TimeoutException {
+      return null;
+    } on http.ClientException {
       return null;
     }
   }
 
   @override
   void close() {
-    _dio.close(force: true);
+    _client.close();
   }
 
   void _log(String message) {
@@ -126,6 +122,21 @@ class DioTrackTransport implements TrackTransport {
       print('[openpanel_dart] $message');
     }
   }
+
+  /// Decodes a JSON body, falling back to the raw text.
+  static Object? _decodeBody(String body) {
+    if (body.isEmpty) return '';
+    try {
+      return jsonDecode(body);
+    } on FormatException {
+      return body;
+    }
+  }
+
+  static Map<String, List<String>> _responseHeaders(http.Response response) =>
+      response.headers.map(
+        (key, value) => MapEntry(key.toLowerCase(), <String>[value]),
+      );
 }
 
 String? _firstString(Map<String, dynamic> map, List<String> keys) {
@@ -139,7 +150,6 @@ String? _firstString(Map<String, dynamic> map, List<String> keys) {
 }
 
 /// Classifies a raw HTTP status code into a [TransportResult].
-@visibleForTesting
 TransportResult classifyStatus({
   required int statusCode,
   Map<String, List<String>>? headers,
@@ -210,7 +220,6 @@ Duration? parseRetryAfter(Map<String, List<String>>? headers) {
 /// * ANSI C asctime: `Sun Nov  6 08:49:37 1994`
 ///
 /// Returns `null` when [value] is not a valid HTTP-date.
-@visibleForTesting
 DateTime? parseHttpDate(String value) {
   final raw = value.trim();
 
@@ -306,7 +315,6 @@ DateTime? _buildUtc({
 }
 
 /// Decodes the API error body for logging purposes.
-@visibleForTesting
 String decodeErrorBody(Object? body) {
   if (body is String) return body;
   if (body is Map) return jsonEncode(body);
@@ -314,7 +322,6 @@ String decodeErrorBody(Object? body) {
 }
 
 /// Extracts a human readable message from an error response body.
-@visibleForTesting
 String extractServerMessage(Object? body) {
   if (body is Map) {
     for (final key in const <String>['message', 'error', 'detail']) {
