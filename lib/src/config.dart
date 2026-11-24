@@ -46,6 +46,10 @@ class OpenpanelConfig {
 
   /// Additional headers sent with every request, for example an `Origin`
   /// header when talking to a self-hosted instance behind a proxy.
+  ///
+  /// Headers a browser refuses to let application code set (`Origin`,
+  /// `User-Agent`, ...) are dropped when compiled for the web, since the
+  /// browser sends its own values for them.
   final Map<String, String> headers;
 
   /// Enables verbose request logging through `dart:developer`.

@@ -7,6 +7,7 @@ import '../config.dart';
 import '../constants.dart';
 import '../models/track_request.dart';
 import '../models/transport_result.dart';
+import 'forbidden_headers.dart';
 
 /// Result of a device identifier resolution.
 class DeviceIdentity {
@@ -41,15 +42,18 @@ class HttpTrackTransport implements TrackTransport {
     http.Client? client,
   })  : _config = config,
         _client = client ?? http.Client(),
-        _baseHeaders = <String, String>{
-          kClientIdHeader: config.clientId,
-          kSdkNameHeader: kSdkName,
-          kSdkVersionHeader: kSdkVersion,
-          'User-Agent': userAgent,
-          if (config.clientSecret != null)
-            kClientSecretHeader: config.clientSecret!,
-          ...config.headers,
-        };
+        _baseHeaders = dropForbiddenHeaders(
+          <String, String>{
+            kClientIdHeader: config.clientId,
+            kSdkNameHeader: kSdkName,
+            kSdkVersionHeader: kSdkVersion,
+            'User-Agent': userAgent,
+            if (config.clientSecret != null)
+              kClientSecretHeader: config.clientSecret!,
+            ...config.headers,
+          },
+          browserForbiddenHeaders,
+        );
 
   static const Duration _requestTimeout = Duration(seconds: 20);
 
