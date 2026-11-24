@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+- Headers verifications for the web version
+
 ## 0.1.5 
 
 - Updating dependencies to match the latest `openpanel_dart` version.
