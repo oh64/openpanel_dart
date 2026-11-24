@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+- Headers verifications for the web version
+
 ## 0.1.4
 
 - Dependencies reduced from four to one: `dio` is replaced by `package:http`,

@@ -3,7 +3,7 @@ description: >-
   Pure Dart analytics client for OpenPanel.
   Track events, identify users and manage groups via the HTTP API.
   Works on Flutter as well as plain Dart (CLI, server, web).
-version: 0.1.4
+version: 0.1.5
 homepage: https://github.com/oh64/openpanel_dart
 topics:
   - analytics
